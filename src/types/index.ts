@@ -6,11 +6,13 @@ export type NavItem = {
 export type Post = {
   id: string
   author_id: string
+  author_name: string
+  excerpt: string
   title: string
   content: string
-  cover_image_url: string | null
   created_at: string
   updated_at: string
+  cover_image_url?: string | null
 }
 
 export type AuthSessionState = {

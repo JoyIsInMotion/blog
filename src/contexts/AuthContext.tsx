@@ -1,6 +1,6 @@
 import { type Session } from '@supabase/supabase-js'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { AuthContext, type AuthContextValue } from './auth-context'
 
 type AuthProviderProps = {
@@ -13,6 +13,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     let mounted = true
+
+    if (!isSupabaseConfigured) {
+      setLoading(false)
+      return () => {
+        mounted = false
+      }
+    }
 
     const initializeSession = async () => {
       const { data, error } = await supabase.auth.getSession()
@@ -48,14 +55,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       session,
       loading,
       signUp: async (email, password) => {
+        if (!isSupabaseConfigured) {
+          throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.')
+        }
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
       },
       signIn: async (email, password) => {
+        if (!isSupabaseConfigured) {
+          throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.')
+        }
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
       },
       signOut: async () => {
+        if (!isSupabaseConfigured) {
+          throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.')
+        }
         const { error } = await supabase.auth.signOut()
         if (error) throw error
       },
