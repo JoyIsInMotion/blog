@@ -1,3 +1,4 @@
+import { House, Info, LayoutDashboard, LogIn, LogOut, PenLine, UserPlus } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { isSupabaseConfigured } from '../../lib/supabase'
@@ -12,7 +13,12 @@ export function AppLayout() {
   const { user, signOut } = useAuth()
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-[-8rem] top-[-8rem] h-64 w-64 rounded-full bg-cyan-300/25 blur-3xl" />
+        <div className="absolute bottom-[-9rem] right-[-8rem] h-72 w-72 rounded-full bg-sky-300/30 blur-3xl" />
+      </div>
+
       {!isSupabaseConfigured && (
         <div className="border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-900">
           <p className="mx-auto max-w-6xl">
@@ -31,27 +37,45 @@ export function AppLayout() {
           <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
             <nav className="flex flex-wrap items-center gap-2 rounded-full border border-white/80 bg-white/75 p-1 shadow-sm">
               <NavLink to="/" end className={linkClass}>
-                Home
+                <span className="inline-flex items-center gap-1.5">
+                  <House size={14} />
+                  Home
+                </span>
               </NavLink>
               <NavLink to="/about" className={linkClass}>
-                About
+                <span className="inline-flex items-center gap-1.5">
+                  <Info size={14} />
+                  About
+                </span>
               </NavLink>
               {user ? (
                 <>
                   <NavLink to="/post/new" className={linkClass}>
-                    Write post
+                    <span className="inline-flex items-center gap-1.5">
+                      <PenLine size={14} />
+                      Write post
+                    </span>
                   </NavLink>
                   <NavLink to="/dashboard" className={linkClass}>
-                    Dashboard
+                    <span className="inline-flex items-center gap-1.5">
+                      <LayoutDashboard size={14} />
+                      Dashboard
+                    </span>
                   </NavLink>
                 </>
               ) : (
                 <>
                   <NavLink to="/login" className={linkClass}>
-                    Login
+                    <span className="inline-flex items-center gap-1.5">
+                      <LogIn size={14} />
+                      Login
+                    </span>
                   </NavLink>
                   <NavLink to="/register" className={linkClass}>
-                    Register
+                    <span className="inline-flex items-center gap-1.5">
+                      <UserPlus size={14} />
+                      Register
+                    </span>
                   </NavLink>
                 </>
               )}
@@ -61,8 +85,9 @@ export function AppLayout() {
               <button
                 type="button"
                 onClick={() => void signOut()}
-                className="rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-cyan-600"
               >
+                <LogOut size={14} />
                 Logout
               </button>
             )}
@@ -77,7 +102,7 @@ export function AppLayout() {
       <footer className="border-t border-white/60 bg-white/60">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-6 text-sm text-slate-600 md:flex-row md:items-center md:justify-between">
           <p>Northstar Blog</p>
-          <p>Routes, authoring screens, and protected post actions are ready to wire to persistence.</p>
+          <p>Public reading, protected authoring, and owner-only post management.</p>
         </div>
       </footer>
     </div>

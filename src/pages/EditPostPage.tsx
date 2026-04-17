@@ -1,9 +1,79 @@
-import { Link, useParams } from 'react-router-dom'
-import { getPostById } from '../lib/posts'
+import { FilePenLine } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { PostEditorForm, type PostEditorValues } from '../components/posts/PostEditorForm'
+import { useAuth } from '../hooks/useAuth'
+import { getPostById, updatePost } from '../lib/posts'
+import { type Post } from '../types'
 
 export function EditPostPage() {
   const { id } = useParams()
-  const post = getPostById(id)
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [post, setPost] = useState<Post | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadPost = async () => {
+      setLoading(true)
+      setErrorMessage(null)
+
+      try {
+        const data = await getPostById(id)
+        setPost(data)
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : 'Unable to load post')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadPost()
+  }, [id])
+
+  const isOwner = useMemo(() => {
+    if (!user || !post) {
+      return false
+    }
+
+    return user.id === post.author_id
+  }, [post, user])
+
+  const handleSubmit = async (values: PostEditorValues) => {
+    if (!user || !post) {
+      setErrorMessage('Unable to verify ownership for this post.')
+      return
+    }
+
+    setSubmitting(true)
+    setErrorMessage(null)
+
+    try {
+      const updated = await updatePost({
+        id: post.id,
+        title: values.title,
+        content: values.content,
+        authorId: user.id,
+      })
+
+      navigate(`/post/${updated.id}`, { replace: true })
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to save post')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-3xl rounded-[2rem] border border-white/80 bg-white/85 p-8 shadow-sm ring-1 ring-slate-200/60 backdrop-blur">
+        <p className="text-sm uppercase tracking-[0.35em] text-slate-500">Loading post</p>
+        <p className="mt-4 text-slate-700">Fetching content for editing...</p>
+      </section>
+    )
+  }
 
   if (!post) {
     return (
@@ -17,37 +87,39 @@ export function EditPostPage() {
     )
   }
 
+  if (!isOwner) {
+    return (
+      <section className="mx-auto max-w-3xl rounded-[2rem] border border-amber-200 bg-amber-50/90 p-8 shadow-sm ring-1 ring-amber-100 backdrop-blur">
+        <p className="text-sm uppercase tracking-[0.35em] text-amber-700">Owner only</p>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">You can only edit your own posts.</h1>
+        <Link to={`/post/${post.id}`} className="mt-6 inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800">
+          Back to post
+        </Link>
+      </section>
+    )
+  }
+
   return (
     <section className="mx-auto w-full max-w-4xl rounded-[2rem] border border-white/80 bg-white/85 p-8 shadow-sm ring-1 ring-slate-200/60 backdrop-blur md:p-10">
-      <p className="text-sm uppercase tracking-[0.35em] text-slate-500">Protected route</p>
+      <p className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.35em] text-slate-500">
+        <FilePenLine size={15} />
+        Protected route
+      </p>
       <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">Edit post</h1>
-      <p className="mt-4 max-w-2xl text-slate-600">The form is preloaded with the current post content and ready to connect to persistence later.</p>
+      <p className="mt-4 max-w-2xl text-slate-600">Update your content and save changes. Ownership is validated before persisting updates.</p>
 
-      <form className="mt-8 space-y-5">
-        <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Title</span>
-          <input defaultValue={post.title} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400" type="text" />
-        </label>
-
-        <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Excerpt</span>
-          <input defaultValue={post.excerpt} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400" type="text" />
-        </label>
-
-        <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Content</span>
-          <textarea defaultValue={post.content} className="min-h-56 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400" />
-        </label>
-
-        <div className="flex flex-wrap gap-3">
-          <button type="button" className="rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white opacity-70">
-            Save changes
-          </button>
-          <Link to={`/post/${post.id}`} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
-            Back to post
-          </Link>
-        </div>
-      </form>
+      <PostEditorForm
+        key={post.id}
+        initialValues={{
+          title: post.title,
+          content: post.content,
+        }}
+        onSubmit={handleSubmit}
+        submitting={submitting}
+        submitLabel="Save changes"
+        cancelHref={`/post/${post.id}`}
+        errorMessage={errorMessage}
+      />
     </section>
   )
 }
